@@ -1,0 +1,43 @@
+{
+	"mode": "Indexed",
+	"parameters": {
+		"effect": {
+			"type": "String",
+			"metadata": {
+				"displayName": "Effect",
+				"description": "Enable or disable the execution of the policy"
+			},
+			"allowedValues": [
+				"Audit",
+				"Deny",
+				"Disabled"
+			],
+			"defaultValue": "Deny"
+		},
+		"ExcludeDNSzone": {
+			"type": "String",
+			"metadata": {
+				"displayName": "Exclude DNS Zone which contains",
+				"description": "Exclude DNS Zone which contains"
+			},
+			"defaultValue": "*.mysql.database.azure.com"
+		}
+	},
+	"policyRule": {
+		"if": {
+			"allOf": [
+				{
+					"equals": "Microsoft.Network/privateDnsZones",
+					"field": "type"
+				},
+				{
+					"field": "name",
+					"notLike": "[parameters('ExcludeDNSzone')]"
+				}
+			]
+		},
+		"then": {
+			"effect": "[parameters('effect')]"
+		}
+	}
+}

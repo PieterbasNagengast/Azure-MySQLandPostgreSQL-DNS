@@ -1,0 +1,339 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-08-01/managementGroupDeploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "metadata": {
+    "_generator": {
+      "name": "bicep",
+      "version": "0.13.1.58284",
+      "templateHash": "12350796326473430960"
+    }
+  },
+  "parameters": {
+    "location": {
+      "type": "string",
+      "defaultValue": "[deployment().location]"
+    },
+    "ManagementGroupID_PolicyAssignment": {
+      "type": "string",
+      "metadata": {
+        "description": "Management group ID for Policy Assignment"
+      }
+    },
+    "virtualNetworkResourceIDs": {
+      "type": "array",
+      "defaultValue": [
+        "/subscriptions/5a287c9e-8d7f-4a12-b74b-41d992cb3f56/resourceGroups/rg-jira-routed-vnet/providers/Microsoft.Network/virtualNetworks/RoutedVNET"
+      ]
+    }
+  },
+  "variables": {
+    "roleDefId": "acdd72a7-3385-48ef-bd42-f606fba81ae7"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2020-10-01",
+      "name": "[format('Deploy-CreatePrivDNSvnetLink-policyDef-{0}', parameters('location'))]",
+      "location": "[deployment().location]",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-08-01/managementGroupDeploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.13.1.58284",
+              "templateHash": "15149467372678943118"
+            }
+          },
+          "variables": {
+            "policyName": "CreatePrivDNSvnetLink",
+            "policyDescription": "CreatePrivDNSvnetLink",
+            "policyDisplayName": "CreatePrivDNSvnetLink"
+          },
+          "resources": [
+            {
+              "type": "Microsoft.Authorization/policyDefinitions",
+              "apiVersion": "2021-06-01",
+              "name": "[variables('policyName')]",
+              "properties": {
+                "description": "[variables('policyDescription')]",
+                "displayName": "[variables('policyDisplayName')]",
+                "policyType": "Custom",
+                "parameters": {
+                  "virtualNetworkResourceId": {
+                    "type": "Array",
+                    "metadata": {
+                      "displayName": "Vnet Resource IDs",
+                      "description": "Resource Ids of a vNet to link. The format must be: '/subscriptions/{subscription id}/resourceGroups/{resourceGroup name}/providers/Microsoft.Network/virtualNetworks/{virtual network name}'"
+                    }
+                  },
+                  "registrationEnabled": {
+                    "type": "Boolean",
+                    "metadata": {
+                      "displayName": "Enable Registration",
+                      "description": "Enables automatic DNS registration in the zone for the linked vNet."
+                    },
+                    "defaultValue": false
+                  }
+                },
+                "policyRule": {
+                  "if": {
+                    "allOf": [
+                      {
+                        "equals": "Microsoft.Network/privateDnsZones",
+                        "field": "type"
+                      },
+                      {
+                        "field": "name",
+                        "contains": ".mysql.database.azure.com"
+                      }
+                    ]
+                  },
+                  "then": {
+                    "details": {
+                      "existenceCondition": {
+                        "allOf": [
+                          {
+                            "equals": "Microsoft.Network/privateDnsZones/virtualNetworkLinks",
+                            "field": "type"
+                          },
+                          {
+                            "in": "[[parameters('virtualNetworkResourceId')]",
+                            "field": "Microsoft.Network/privateDnsZones/virtualNetworkLinks/virtualNetwork.id"
+                          },
+                          {
+                            "field": "name",
+                            "contains": ".mysql.database.azure.com"
+                          }
+                        ]
+                      },
+                      "deployment": {
+                        "properties": {
+                          "mode": "incremental",
+                          "parameters": {
+                            "privateDnsZoneName": {
+                              "value": "[[field('name')]"
+                            },
+                            "virtualNetworkResourceId": {
+                              "value": "[[parameters('virtualNetworkResourceId')]"
+                            },
+                            "registrationEnabled": {
+                              "value": "[[parameters('registrationEnabled')]"
+                            }
+                          },
+                          "template": {
+                            "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+                            "contentVersion": "1.0.0.0",
+                            "parameters": {
+                              "privateDnsZoneName": {
+                                "type": "string"
+                              },
+                              "virtualNetworkResourceId": {
+                                "type": "array"
+                              },
+                              "registrationEnabled": {
+                                "type": "bool"
+                              }
+                            },
+                            "resources": [
+                              {
+                                "type": "Microsoft.Network/privateDnsZones/virtualNetworkLinks",
+                                "apiVersion": "[sub(sub(2018, 9), 1)]",
+                                "name": "[[concat(parameters('privateDnsZoneName')'/'concat(parameters('privateDnsZoneName')'-' last(split(parameters('virtualNetworkResourceId')[copyIndex()]'/'))))]",
+                                "location": "global",
+                                "[string('copy')]": {
+                                  "name": "vnetlink-counter",
+                                  "count": "[[length(parameters('virtualNetworkResourceId'))]"
+                                },
+                                "properties": {
+                                  "registrationEnabled": "[[parameters('registrationEnabled')]",
+                                  "virtualNetwork": {
+                                    "id": "[[parameters('virtualNetworkResourceId')[copyIndex()]]"
+                                  }
+                                }
+                              }
+                            ]
+                          }
+                        }
+                      },
+                      "roleDefinitionIds": [
+                        "/providers/microsoft.authorization/roleDefinitions/b12aa53e-6015-4669-85d0-8515ebb3ae7f"
+                      ],
+                      "type": "Microsoft.Network/privateDnsZones/virtualNetworkLinks"
+                    },
+                    "effect": "deployIfNotExists"
+                  }
+                }
+              }
+            }
+          ],
+          "outputs": {
+            "PolicyID": {
+              "type": "string",
+              "value": "[extensionResourceId(managementGroup().id, 'Microsoft.Authorization/policyDefinitions', variables('policyName'))]"
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2020-10-01",
+      "name": "[format('Deploy-CreatePrivDNSvnetLink-policyAssign-{0}', parameters('location'))]",
+      "scope": "[format('Microsoft.Management/managementGroups/{0}', parameters('ManagementGroupID_PolicyAssignment'))]",
+      "location": "[deployment().location]",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "location": {
+            "value": "[parameters('location')]"
+          },
+          "PolicyDefID": {
+            "value": "[reference(extensionResourceId(managementGroup().id, 'Microsoft.Resources/deployments', format('Deploy-CreatePrivDNSvnetLink-policyDef-{0}', parameters('location'))), '2020-10-01').outputs.PolicyID.value]"
+          },
+          "virtualNetworkResourceIDs": {
+            "value": "[parameters('virtualNetworkResourceIDs')]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-08-01/managementGroupDeploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.13.1.58284",
+              "templateHash": "444319472617725308"
+            }
+          },
+          "parameters": {
+            "location": {
+              "type": "string"
+            },
+            "PolicyDefID": {
+              "type": "string"
+            },
+            "virtualNetworkResourceIDs": {
+              "type": "array"
+            }
+          },
+          "resources": [
+            {
+              "type": "Microsoft.Authorization/policyAssignments",
+              "apiVersion": "2022-06-01",
+              "name": "CreatePrivDNSvnetLink",
+              "location": "[parameters('location')]",
+              "identity": {
+                "type": "SystemAssigned"
+              },
+              "properties": {
+                "displayName": "CreatePrivDNSvnetLink-Assignment-displayname",
+                "description": "CreatePrivDNSvnetLink-Assignment-description",
+                "parameters": {
+                  "virtualNetworkResourceId": {
+                    "value": "[parameters('virtualNetworkResourceIDs')]"
+                  },
+                  "registrationEnabled": {
+                    "value": false
+                  }
+                },
+                "policyDefinitionId": "[parameters('PolicyDefID')]"
+              }
+            }
+          ],
+          "outputs": {
+            "ManagedIdentityID": {
+              "type": "string",
+              "value": "[reference(extensionResourceId(managementGroup().id, 'Microsoft.Authorization/policyAssignments', 'CreatePrivDNSvnetLink'), '2022-06-01', 'full').identity.principalId]"
+            }
+          }
+        }
+      },
+      "dependsOn": [
+        "[extensionResourceId(managementGroup().id, 'Microsoft.Resources/deployments', format('Deploy-CreatePrivDNSvnetLink-policyDef-{0}', parameters('location')))]"
+      ]
+    },
+    {
+      "copy": {
+        "name": "rbac",
+        "count": "[length(parameters('virtualNetworkResourceIDs'))]"
+      },
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2020-10-01",
+      "name": "[format('Deploy-rbac-{0}-policyAssign-{1}', copyIndex(), parameters('location'))]",
+      "subscriptionId": "[split(parameters('virtualNetworkResourceIDs')[copyIndex()], '/')[1]]",
+      "resourceGroup": "[split(parameters('virtualNetworkResourceIDs')[copyIndex()], '/')[3]]",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "ManagedIdentityID": {
+            "value": "[reference(extensionResourceId(tenantResourceId('Microsoft.Management/managementGroups', parameters('ManagementGroupID_PolicyAssignment')), 'Microsoft.Resources/deployments', format('Deploy-CreatePrivDNSvnetLink-policyAssign-{0}', parameters('location'))), '2020-10-01').outputs.ManagedIdentityID.value]"
+          },
+          "roleDefinitionId": {
+            "value": "[variables('roleDefId')]"
+          },
+          "VnetName": {
+            "value": "[split(parameters('virtualNetworkResourceIDs')[copyIndex()], '/')[8]]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.13.1.58284",
+              "templateHash": "6824793098087683483"
+            }
+          },
+          "parameters": {
+            "VnetName": {
+              "type": "string"
+            },
+            "roleDefinitionId": {
+              "type": "string"
+            },
+            "ManagedIdentityID": {
+              "type": "string"
+            }
+          },
+          "resources": [
+            {
+              "type": "Microsoft.Authorization/roleAssignments",
+              "apiVersion": "2022-04-01",
+              "scope": "[format('Microsoft.Network/virtualNetworks/{0}', parameters('VnetName'))]",
+              "name": "[guid(parameters('ManagedIdentityID'), parameters('roleDefinitionId'), resourceId('Microsoft.Network/virtualNetworks', parameters('VnetName')))]",
+              "properties": {
+                "principalId": "[parameters('ManagedIdentityID')]",
+                "roleDefinitionId": "[parameters('roleDefinitionId')]"
+              }
+            }
+          ]
+        }
+      },
+      "dependsOn": [
+        "[extensionResourceId(tenantResourceId('Microsoft.Management/managementGroups', parameters('ManagementGroupID_PolicyAssignment')), 'Microsoft.Resources/deployments', format('Deploy-CreatePrivDNSvnetLink-policyAssign-{0}', parameters('location')))]"
+      ]
+    }
+  ],
+  "outputs": {
+    "PolicyDefID": {
+      "type": "string",
+      "value": "[reference(extensionResourceId(managementGroup().id, 'Microsoft.Resources/deployments', format('Deploy-CreatePrivDNSvnetLink-policyDef-{0}', parameters('location'))), '2020-10-01').outputs.PolicyID.value]"
+    },
+    "ManagedIdentityID": {
+      "type": "string",
+      "value": "[reference(extensionResourceId(tenantResourceId('Microsoft.Management/managementGroups', parameters('ManagementGroupID_PolicyAssignment')), 'Microsoft.Resources/deployments', format('Deploy-CreatePrivDNSvnetLink-policyAssign-{0}', parameters('location'))), '2020-10-01').outputs.ManagedIdentityID.value]"
+    }
+  }
+}
