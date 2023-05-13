@@ -1,32 +1,32 @@
 targetScope = 'managementGroup'
 
-var policyName = 'CreatePrivDNSvnetLink'
-var policyDescription = 'CreatePrivDNSvnetLink'
-var policyDisplayName = 'CreatePrivDNSvnetLink'
-
 resource CreatePrivDNSvnetLink 'Microsoft.Authorization/policyDefinitions@2021-06-01' = {
-  name: policyName
+  name: 'CreatePrivDNSvnetLink'
   properties: {
-    description: policyDescription
-    displayName: policyDisplayName
+    description: 'Deploy VNET Links to Private DNS Zones. e.g. for MySQL - Flexible Server and PostgreSQL - Flexible Server'
+    displayName: 'Deploy VNET Links to Private DNS Zones.'
     policyType: 'Custom'
     parameters: {
       virtualNetworkResourceId: {
         type: 'Array'
         metadata: {
           displayName: 'Vnet Resource IDs'
-          description: 'Resource Ids of a vNet to link. The format must be: \'/subscriptions/{subscription id}/resourceGroups/{resourceGroup name}/providers/Microsoft.Network/virtualNetworks/{virtual network name}\''
+          description: 'Resource ID\'s of VNET\'s to link. The format must be: \'/subscriptions/{subscription id}/resourceGroups/{resourceGroup name}/providers/Microsoft.Network/virtualNetworks/{virtual network name}\''
         }
       }
-      registrationEnabled: {
-        type: 'Boolean'
+      privateDNSzoneNames: {
+        type: 'array'
         metadata: {
-          displayName: 'Enable Registration'
-          description: 'Enables automatic DNS registration in the zone for the linked vNet.'
+          displayName: 'Private DNS Zone Names'
+          description: 'Private DNS Zone Names to link. The format must be: \'.mysql.database.azure.com\''
         }
-        defaultValue: false
+        defaultValue: [
+          '.mysql.database.azure.com'
+          '.postgres.database.azure.com'
+        ]
       }
     }
+    mode: 'All'
     policyRule: {
       if: {
         allOf: [
@@ -35,8 +35,14 @@ resource CreatePrivDNSvnetLink 'Microsoft.Authorization/policyDefinitions@2021-0
             field: 'type'
           }
           {
-            field: 'name'
-            contains: '.mysql.database.azure.com'
+            count: {
+              value: '[parameters(\'privateDNSzoneNames\')]'
+              where: {
+                field: 'name'
+                contains: '[current()]'
+              }
+            }
+            greater: 0
           }
         ]
       }
@@ -52,10 +58,6 @@ resource CreatePrivDNSvnetLink 'Microsoft.Authorization/policyDefinitions@2021-0
                 in: '[parameters(\'virtualNetworkResourceId\')]'
                 field: 'Microsoft.Network/privateDnsZones/virtualNetworkLinks/virtualNetwork.id'
               }
-              {
-                field: 'name'
-                contains: '.mysql.database.azure.com'
-              }
             ]
           }
           deployment: {
@@ -68,9 +70,6 @@ resource CreatePrivDNSvnetLink 'Microsoft.Authorization/policyDefinitions@2021-0
                 virtualNetworkResourceId: {
                   value: '[parameters(\'virtualNetworkResourceId\')]'
                 }
-                registrationEnabled: {
-                  value: '[parameters(\'registrationEnabled\')]'
-                }
               }
               template: {
                 '$schema': 'http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#'
@@ -82,22 +81,19 @@ resource CreatePrivDNSvnetLink 'Microsoft.Authorization/policyDefinitions@2021-0
                   virtualNetworkResourceId: {
                     type: 'array'
                   }
-                  registrationEnabled: {
-                    type: 'bool'
-                  }
                 }
                 resources: [
                   {
                     type: 'Microsoft.Network/privateDnsZones/virtualNetworkLinks'
-                    apiVersion: 2018-09-01
-                    name: '[concat(parameters(\'privateDnsZoneName\')\'/\'concat(parameters(\'privateDnsZoneName\')\'-\' last(split(parameters(\'virtualNetworkResourceId\')[copyIndex()]\'/\'))))]'
+                    apiVersion: '2020-06-01'
+                    name: '[concat(parameters(\'privateDnsZoneName\'),\'/\',last(split(parameters(\'virtualNetworkResourceId\')[copyIndex()],\'/\')))]'
                     location: 'global'
                     copy: {
                       name: 'vnetlink-counter'
                       count: '[length(parameters(\'virtualNetworkResourceId\'))]'
                     }
                     properties: {
-                      registrationEnabled: '[parameters(\'registrationEnabled\')]'
+                      registrationEnabled: false
                       virtualNetwork: {
                         id: '[parameters(\'virtualNetworkResourceId\')[copyIndex()]]'
                       }
