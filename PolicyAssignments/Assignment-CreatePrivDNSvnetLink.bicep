@@ -2,6 +2,7 @@ targetScope = 'managementGroup'
 param location string
 param PolicyDefID string
 param virtualNetworkResourceIDs array
+param privateDNSzoneNames array
 param createPolicyAssignment bool
 
 resource PolicyAssignment 'Microsoft.Authorization/policyAssignments@2022-06-01' = {
@@ -18,10 +19,7 @@ resource PolicyAssignment 'Microsoft.Authorization/policyAssignments@2022-06-01'
         value: virtualNetworkResourceIDs
       }
       privateDNSzoneNames: {
-        value: [
-          '.mysql.database.azure.com'
-          '.postgres.database.azure.com'
-        ]
+        value: privateDNSzoneNames
       }
     }
     policyDefinitionId: PolicyDefID

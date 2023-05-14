@@ -4,7 +4,7 @@ resource CreatePrivDNSvnetLink 'Microsoft.Authorization/policyDefinitions@2021-0
   name: 'CreatePrivDNSvnetLink'
   properties: {
     description: 'Deploy VNET Links to Private DNS Zones. e.g. for MySQL - Flexible Server and PostgreSQL - Flexible Server'
-    displayName: 'Deploy VNET Links to Private DNS Zones.'
+    displayName: 'Deploy VNET Links to Private DNS Zones'
     policyType: 'Custom'
     parameters: {
       virtualNetworkResourceId: {
@@ -20,10 +20,6 @@ resource CreatePrivDNSvnetLink 'Microsoft.Authorization/policyDefinitions@2021-0
           displayName: 'Private DNS Zone Names'
           description: 'Private DNS Zone Names to link. The format must be: \'.mysql.database.azure.com\''
         }
-        defaultValue: [
-          '.mysql.database.azure.com'
-          '.postgres.database.azure.com'
-        ]
       }
     }
     mode: 'All'

@@ -10,6 +10,12 @@ param virtualNetworkResourceIDs array = [
   '/subscriptions/aa66b139-0ef4-4018-8aa7-b9510bea120a/resourceGroups/rg-hub-flexible-servertests/providers/Microsoft.Network/virtualNetworks/hub-vnet-fleible-servertest'
 ]
 
+@description('Array of private DNS zone names to be linked to the virtual network')
+param privateDNSzoneNames array = [
+  '.mysql.database.azure.com'
+  '.postgres.database.azure.com'
+]
+
 @description('Create Policy Remediation Task')
 param createPolicyRemediationTask bool = true
 
@@ -29,6 +35,7 @@ module CreatePrivDNSvnetLink_Assignment 'PolicyAssignments/Assignment-CreatePriv
     location: location
     PolicyDefID: CreatePrivDNSvnetLink_Definition.outputs.PolicyID
     virtualNetworkResourceIDs: virtualNetworkResourceIDs
+    privateDNSzoneNames: privateDNSzoneNames
     createPolicyAssignment: createPolicyRemediationTask
   }
 }
