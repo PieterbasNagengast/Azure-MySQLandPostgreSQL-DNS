@@ -3,17 +3,15 @@ targetScope = 'managementGroup'
 param location string = deployment().location
 
 @description('Management group ID for Policy Assignment')
-param ManagementGroupID_PolicyAssignment string = 'AzureITis-landingzones'
+param ManagementGroupID_PolicyAssignment string
 
-@description('Array of virtual network resource IDs to be linked to the private DNS zone')
-param virtualNetworkResourceIDs array = [
-  '/subscriptions/aa66b139-0ef4-4018-8aa7-b9510bea120a/resourceGroups/rg-hub-flexible-servertests/providers/Microsoft.Network/virtualNetworks/hub-vnet-fleible-servertest'
-]
+@description('Virtual Network resource ID to be linked to the private DNS zone')
+param virtualNetworkResourceID string
 
-@description('Array of private DNS zone names to be linked to the virtual network')
+@description('Array of private DNS zone names to be linked to the virtual network. Use * as wildcard for subdomain matching. e.g. *.mysql.database.azure.com')
 param privateDNSzoneNames array = [
-  '.mysql.database.azure.com'
-  '.postgres.database.azure.com'
+  '*.mysql.database.azure.com'
+  '*.postgres.database.azure.com'
 ]
 
 @description('Create Policy Remediation Task')
@@ -23,7 +21,7 @@ param createPolicyRemediationTask bool = true
 var roleDefId = 'b12aa53e-6015-4669-85d0-8515ebb3ae7f'
 
 // Deploy Policy Definition
-module CreatePrivDNSvnetLink_Definition 'PolicyDefinitions/Definition-CreatePrivDNSvnetLink.bicep' = {
+module CreatePrivDNSvnetLink_Definition 'PolicyDefinitions/CreatePrivDNSvnetLink-PolicyDefinition.bicep' = {
   name: 'Deploy-CreatePrivDNSvnetLink-policyDef-${location}'
 }
 
@@ -34,22 +32,15 @@ module CreatePrivDNSvnetLink_Assignment 'PolicyAssignments/Assignment-CreatePriv
   params: {
     location: location
     PolicyDefID: CreatePrivDNSvnetLink_Definition.outputs.PolicyID
-    virtualNetworkResourceIDs: virtualNetworkResourceIDs
+    virtualNetworkResourceID: virtualNetworkResourceID
     privateDNSzoneNames: privateDNSzoneNames
     createPolicyAssignment: createPolicyRemediationTask
+    PolicyDescription: CreatePrivDNSvnetLink_Definition.outputs.PolicyDescription
+    PolicyDisplayName: CreatePrivDNSvnetLink_Definition.outputs.PolicyDisplayName
+    PolicyName: CreatePrivDNSvnetLink_Definition.outputs.PolicyName
+    roleDefinitionId: roleDefId
   }
 }
-
-// Deploy RBAC Assignment. Assign Reader role to the Managed Identity used by the Policy Assignment for remediation
-module rbac 'RoleAssignments/rbac-assignment.bicep' = [for (VnetID, i) in virtualNetworkResourceIDs: {
-  name: 'Deploy-rbac-${i}-policyAssign-${location}'
-  scope: resourceGroup(split(VnetID, '/')[2], split(VnetID, '/')[4])
-  params: {
-    ManagedIdentityID: CreatePrivDNSvnetLink_Assignment.outputs.ManagedIdentityID
-    roleDefinitionId: roleDefId
-    VnetName: split(VnetID, '/')[8]
-  }
-}]
 
 output PolicyDefID string = CreatePrivDNSvnetLink_Definition.outputs.PolicyID
 output ManagedIdentityID string = CreatePrivDNSvnetLink_Assignment.outputs.ManagedIdentityID

@@ -1,0 +1,17 @@
+{
+    "virtualNetworkResourceId": {
+        "type": "String",
+        "metadata": {
+            "strongType": "microsoft.Network/virtualNetworks",
+            "displayName": "Vnet Resource ID",
+            "description": "Resource ID of VNE to link. The format must be: '/subscriptions/{subscription id}/resourceGroups/{resourceGroup name}/providers/Microsoft.Network/virtualNetworks/{virtual network name}'"
+        }
+    },
+    "privateDNSzoneNames": {
+        "type": "array",
+        "metadata": {
+            "displayName": "Private DNS Zone Names",
+            "description": "Private DNS Zone Names to link. The format must be: '.mysql.database.azure.com'"
+        }
+    }
+}
