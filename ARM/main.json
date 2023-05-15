@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.17.1.54307",
-      "templateHash": "11095188043979237392"
+      "templateHash": "9745804525658320312"
     }
   },
   "parameters": {
@@ -188,6 +188,137 @@
                 "metadata": {
                   "displayName": "Private DNS Zone Names",
                   "description": "Private DNS Zone Names to link. The format must be: '.mysql.database.azure.com'"
+                }
+              }
+            },
+            "PolicyRule": "[variables('$fxv#0')]",
+            "PolicyParams": "[variables('$fxv#1')]"
+          },
+          "resources": [
+            {
+              "type": "Microsoft.Authorization/policyDefinitions",
+              "apiVersion": "2021-06-01",
+              "name": "[parameters('PolicyName')]",
+              "properties": {
+                "description": "[parameters('PolicyDescription')]",
+                "displayName": "[parameters('PolicyDisplayName')]",
+                "policyType": "Custom",
+                "mode": "All",
+                "metadata": {
+                  "category": "[parameters('PolicyCategory')]",
+                  "version": "[parameters('PolicyVersion')]"
+                },
+                "parameters": "[variables('PolicyParams')]",
+                "policyRule": "[variables('PolicyRule')]"
+              }
+            }
+          ],
+          "outputs": {
+            "PolicyID": {
+              "type": "string",
+              "value": "[extensionResourceId(managementGroup().id, 'Microsoft.Authorization/policyDefinitions', parameters('PolicyName'))]"
+            },
+            "PolicyName": {
+              "type": "string",
+              "value": "[parameters('PolicyName')]"
+            },
+            "PolicyDisplayName": {
+              "type": "string",
+              "value": "[reference(extensionResourceId(managementGroup().id, 'Microsoft.Authorization/policyDefinitions', parameters('PolicyName')), '2021-06-01').displayName]"
+            },
+            "PolicyDescription": {
+              "type": "string",
+              "value": "[reference(extensionResourceId(managementGroup().id, 'Microsoft.Authorization/policyDefinitions', parameters('PolicyName')), '2021-06-01').description]"
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2022-09-01",
+      "name": "[format('Deploy-DenyPrivDNSZone_Definition-policyDef-{0}', parameters('location'))]",
+      "location": "[deployment().location]",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-08-01/managementGroupDeploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.17.1.54307",
+              "templateHash": "18045596888120486901"
+            }
+          },
+          "parameters": {
+            "PolicyName": {
+              "type": "string",
+              "defaultValue": "Deny-PrivDNS-zones"
+            },
+            "PolicyDisplayName": {
+              "type": "string",
+              "defaultValue": "Deny the creation of Private DNS Zones except exclusions"
+            },
+            "PolicyDescription": {
+              "type": "string",
+              "defaultValue": "Deny the creation of Private DNS Zones except exclusions like e.g. for MySQL - Flexible Server and PostgreSQL - Flexible Server"
+            },
+            "PolicyCategory": {
+              "type": "string",
+              "defaultValue": "Private DNS Zones"
+            },
+            "PolicyVersion": {
+              "type": "string",
+              "defaultValue": "1.0.0"
+            }
+          },
+          "variables": {
+            "$fxv#0": {
+              "if": {
+                "allOf": [
+                  {
+                    "equals": "Microsoft.Network/privateDnsZones",
+                    "field": "type"
+                  },
+                  {
+                    "count": {
+                      "value": "[[parameters('ExcludeDNSzones')]",
+                      "where": {
+                        "field": "name",
+                        "like": "[[current()]"
+                      }
+                    },
+                    "equals": 0
+                  }
+                ]
+              },
+              "then": {
+                "effect": "[[parameters('effect')]"
+              }
+            },
+            "$fxv#1": {
+              "effect": {
+                "type": "String",
+                "metadata": {
+                  "displayName": "Effect",
+                  "description": "Enable or disable the execution of the policy"
+                },
+                "allowedValues": [
+                  "Audit",
+                  "Deny",
+                  "Disabled"
+                ],
+                "defaultValue": "Deny"
+              },
+              "ExcludeDNSzones": {
+                "type": "array",
+                "metadata": {
+                  "displayName": "Exclude DNS Zone which contains",
+                  "description": "Exclude DNS Zone which contains. Example: '*.contoso.com'"
                 }
               }
             },
@@ -436,6 +567,106 @@
       },
       "dependsOn": [
         "[extensionResourceId(managementGroup().id, 'Microsoft.Resources/deployments', format('Deploy-CreatePrivDNSvnetLink-policyDef-{0}', parameters('location')))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2022-09-01",
+      "name": "[format('Deploy-DenyPrivDNSZones-policyAssign-{0}', parameters('location'))]",
+      "scope": "[format('Microsoft.Management/managementGroups/{0}', parameters('ManagementGroupID_PolicyAssignment'))]",
+      "location": "[deployment().location]",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "location": {
+            "value": "[parameters('location')]"
+          },
+          "PolicyDefID": {
+            "value": "[reference(extensionResourceId(managementGroup().id, 'Microsoft.Resources/deployments', format('Deploy-DenyPrivDNSZone_Definition-policyDef-{0}', parameters('location'))), '2022-09-01').outputs.PolicyID.value]"
+          },
+          "PolicyDescription": {
+            "value": "[reference(extensionResourceId(managementGroup().id, 'Microsoft.Resources/deployments', format('Deploy-DenyPrivDNSZone_Definition-policyDef-{0}', parameters('location'))), '2022-09-01').outputs.PolicyDescription.value]"
+          },
+          "PolicyDisplayName": {
+            "value": "[reference(extensionResourceId(managementGroup().id, 'Microsoft.Resources/deployments', format('Deploy-DenyPrivDNSZone_Definition-policyDef-{0}', parameters('location'))), '2022-09-01').outputs.PolicyDisplayName.value]"
+          },
+          "PolicyName": {
+            "value": "[reference(extensionResourceId(managementGroup().id, 'Microsoft.Resources/deployments', format('Deploy-DenyPrivDNSZone_Definition-policyDef-{0}', parameters('location'))), '2022-09-01').outputs.PolicyName.value]"
+          },
+          "privateDNSzoneNames": {
+            "value": "[parameters('privateDNSzoneNames')]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-08-01/managementGroupDeploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.17.1.54307",
+              "templateHash": "17082975175814245865"
+            }
+          },
+          "parameters": {
+            "location": {
+              "type": "string"
+            },
+            "PolicyDefID": {
+              "type": "string"
+            },
+            "PolicyName": {
+              "type": "string"
+            },
+            "PolicyDisplayName": {
+              "type": "string"
+            },
+            "PolicyDescription": {
+              "type": "string"
+            },
+            "privateDNSzoneNames": {
+              "type": "array"
+            },
+            "PolicyEffect": {
+              "type": "string",
+              "defaultValue": "Deny",
+              "allowedValues": [
+                "Deny",
+                "Audit",
+                "Disabled"
+              ]
+            }
+          },
+          "resources": [
+            {
+              "type": "Microsoft.Authorization/policyAssignments",
+              "apiVersion": "2022-06-01",
+              "name": "[parameters('PolicyName')]",
+              "location": "[parameters('location')]",
+              "identity": {
+                "type": "SystemAssigned"
+              },
+              "properties": {
+                "displayName": "[parameters('PolicyDisplayName')]",
+                "description": "[parameters('PolicyDescription')]",
+                "parameters": {
+                  "effect": {
+                    "value": "[parameters('PolicyEffect')]"
+                  },
+                  "ExcludeDNSzones": {
+                    "value": "[parameters('privateDNSzoneNames')]"
+                  }
+                },
+                "policyDefinitionId": "[parameters('PolicyDefID')]"
+              }
+            }
+          ]
+        }
+      },
+      "dependsOn": [
+        "[extensionResourceId(managementGroup().id, 'Microsoft.Resources/deployments', format('Deploy-DenyPrivDNSZone_Definition-policyDef-{0}', parameters('location')))]"
       ]
     }
   ],
