@@ -1,5 +1,9 @@
 # TOC <!-- omit from toc -->
 
+| Description | Template |
+|---|---|
+| Deploy to Azure Subscription |[![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#blade/Microsoft_Azure_CreateUIDef/CustomDeploymentBlade/uri/https%3A%2F%2Fraw.githubusercontent.com%2FPieterbasNagengast%2FAzure-MySQLandPostgreSQL-DNS%2Fmain%2FARM%2Fmain.json/uiFormDefinitionUri/https%3A%2F%2Fraw.githubusercontent.com%2FPieterbasNagengast%2FAzure-MySQLandPostgreSQL-DNS%2Fmain%2Fuidefinition.json)|
+
 1. Azure-MySQLandPostgreSQL-DNS
 2. The issue
 3. MySQL and PostgreSQL single and flexbile server private connectivity options
