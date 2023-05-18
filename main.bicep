@@ -1,4 +1,5 @@
 targetScope = 'managementGroup'
+
 @description('Location for Policy Assignment')
 param location string = deployment().location
 
@@ -20,6 +21,7 @@ param createPolicyRemediationTask bool = true
 // Azure Role Definition of Private DNS Zone Contributor (b12aa53e-6015-4669-85d0-8515ebb3ae7f)
 var roleDefId = 'b12aa53e-6015-4669-85d0-8515ebb3ae7f'
 
+// Deploy Policy Definitions:
 // Deploy Policy Definition: Create Priv DNS vnet links
 module CreatePrivDNSvnetLink_Definition 'PolicyDefinitions/CreatePrivDNSvnetLink-PolicyDefinition.bicep' = {
   name: 'Deploy-CreatePrivDNSvnetLink-policyDef-${location}'
@@ -30,8 +32,9 @@ module DenyPrivDNSZone_Definition 'PolicyDefinitions/DenyPrivDNSzones-PolicyDefi
   name: 'Deploy-DenyPrivDNSZone_Definition-policyDef-${location}'
 }
 
-// Deploy Policy Assignment
-module CreatePrivDNSvnetLink_Assignment 'PolicyAssignments/Assignment-CreatePrivDNSvnetLink.bicep' = {
+// Deploy Policy Assignments:
+// Deploy Policy Assignment: Create Priv DNS vnet links
+module CreatePrivDNSvnetLink_Assignment 'PolicyAssignments/CreatePrivDNSvnetLink-PolicyAssignment.bicep' = {
   name: 'Deploy-CreatePrivDNSvnetLink-policyAssign-${location}'
   scope: managementGroup(ManagementGroupID_PolicyAssignment)
   params: {
@@ -47,8 +50,8 @@ module CreatePrivDNSvnetLink_Assignment 'PolicyAssignments/Assignment-CreatePriv
   }
 }
 
-// Deploy Policy Assignment
-module DenyPrivDNSZone_Definition_Assignment 'PolicyAssignments/Assignment-DenyPrivDNSZones.bicep' = {
+// Deploy Policy Assignment: Deny creation of Private DNS Zones except exclusions
+module DenyPrivDNSZone_Definition_Assignment 'PolicyAssignments/DenyPrivDNSzones-PolicyAssignment.bicep' = {
   name: 'Deploy-DenyPrivDNSZones-policyAssign-${location}'
   scope: managementGroup(ManagementGroupID_PolicyAssignment)
   params: {

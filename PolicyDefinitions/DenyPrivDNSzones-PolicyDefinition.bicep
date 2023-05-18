@@ -6,8 +6,7 @@ param PolicyDescription string = 'Deny the creation of Private DNS Zones except 
 param PolicyCategory string = 'Private DNS Zones'
 param PolicyVersion string = '1.0.0'
 
-var PolicyRule = loadJsonContent('DenyPrivDNSzones-PolicyRule.json')
-var PolicyParams = loadJsonContent('DenyPrivDNSzones-PolicyParams.json')
+var PolicyJSON = loadJsonContent('DenyPrivDNSzones-Policy.json')
 
 resource DenyPrivDNSzones 'Microsoft.Authorization/policyDefinitions@2021-06-01' = {
   name: PolicyName
@@ -20,8 +19,8 @@ resource DenyPrivDNSzones 'Microsoft.Authorization/policyDefinitions@2021-06-01'
       category: PolicyCategory
       version: PolicyVersion
     }
-    parameters: PolicyParams
-    policyRule: PolicyRule
+    parameters: PolicyJSON.parameters
+    policyRule: PolicyJSON.policyRule
   }
 }
 

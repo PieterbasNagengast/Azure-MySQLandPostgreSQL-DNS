@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.17.1.54307",
-      "templateHash": "9745804525658320312"
+      "templateHash": "13498308602779634678"
     }
   },
   "parameters": {
@@ -67,7 +67,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.17.1.54307",
-              "templateHash": "8725852328721904928"
+              "templateHash": "14468781205493991659"
             }
           },
           "parameters": {
@@ -94,105 +94,118 @@
           },
           "variables": {
             "$fxv#0": {
-              "if": {
-                "allOf": [
-                  {
-                    "equals": "Microsoft.Network/privateDnsZones",
-                    "field": "type"
+              "parameters": {
+                "effect": {
+                  "type": "String",
+                  "metadata": {
+                    "displayName": "Effect",
+                    "description": "Enable or disable the execution of the policy"
                   },
-                  {
-                    "count": {
-                      "value": "[[parameters('privateDNSzoneNames')]",
-                      "where": {
-                        "field": "name",
-                        "like": "[[current()]"
-                      }
-                    },
-                    "greater": 0
+                  "allowedValues": [
+                    "deployIfNotExists",
+                    "Disabled"
+                  ],
+                  "defaultValue": "deployIfNotExists"
+                },
+                "virtualNetworkResourceId": {
+                  "type": "String",
+                  "metadata": {
+                    "strongType": "microsoft.Network/virtualNetworks",
+                    "displayName": "Vnet Resource ID",
+                    "description": "Resource ID of VNE to link. The format must be: '/subscriptions/{subscription id}/resourceGroups/{resourceGroup name}/providers/Microsoft.Network/virtualNetworks/{virtual network name}'"
                   }
-                ]
+                },
+                "privateDNSzoneNames": {
+                  "type": "array",
+                  "metadata": {
+                    "displayName": "Private DNS Zone Names",
+                    "description": "Private DNS Zone Names to link. The format must be: '.mysql.database.azure.com'"
+                  }
+                }
               },
-              "then": {
-                "details": {
-                  "existenceCondition": {
-                    "allOf": [
-                      {
-                        "equals": "Microsoft.Network/privateDnsZones/virtualNetworkLinks",
-                        "field": "type"
-                      },
-                      {
-                        "equals": "[[parameters('virtualNetworkResourceId')]",
-                        "field": "Microsoft.Network/privateDnsZones/virtualNetworkLinks/virtualNetwork.id"
-                      }
-                    ]
-                  },
-                  "EvaluationDelay": "AfterProvisioningSuccess",
-                  "deployment": {
-                    "properties": {
-                      "mode": "incremental",
-                      "parameters": {
-                        "privateDnsZoneName": {
-                          "value": "[[field('name')]"
-                        },
-                        "virtualNetworkResourceId": {
-                          "value": "[[parameters('virtualNetworkResourceId')]"
+              "policyRule": {
+                "if": {
+                  "allOf": [
+                    {
+                      "equals": "Microsoft.Network/privateDnsZones",
+                      "field": "type"
+                    },
+                    {
+                      "count": {
+                        "value": "[[parameters('privateDNSzoneNames')]",
+                        "where": {
+                          "field": "name",
+                          "like": "[[current()]"
                         }
                       },
-                      "template": {
-                        "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
-                        "contentVersion": "1.0.0.0",
+                      "greater": 0
+                    }
+                  ]
+                },
+                "then": {
+                  "details": {
+                    "existenceCondition": {
+                      "allOf": [
+                        {
+                          "equals": "Microsoft.Network/privateDnsZones/virtualNetworkLinks",
+                          "field": "type"
+                        },
+                        {
+                          "equals": "[[parameters('virtualNetworkResourceId')]",
+                          "field": "Microsoft.Network/privateDnsZones/virtualNetworkLinks/virtualNetwork.id"
+                        }
+                      ]
+                    },
+                    "EvaluationDelay": "AfterProvisioningSuccess",
+                    "deployment": {
+                      "properties": {
+                        "mode": "incremental",
                         "parameters": {
                           "privateDnsZoneName": {
-                            "type": "string"
+                            "value": "[[field('name')]"
                           },
                           "virtualNetworkResourceId": {
-                            "type": "string"
+                            "value": "[[parameters('virtualNetworkResourceId')]"
                           }
                         },
-                        "resources": [
-                          {
-                            "type": "Microsoft.Network/privateDnsZones/virtualNetworkLinks",
-                            "apiVersion": "2020-06-01",
-                            "name": "[[concat(parameters('privateDnsZoneName'),'/',last(split(parameters('virtualNetworkResourceId'),'/')))]",
-                            "location": "global",
-                            "properties": {
-                              "registrationEnabled": false,
-                              "virtualNetwork": {
-                                "id": "[[parameters('virtualNetworkResourceId')]"
+                        "template": {
+                          "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+                          "contentVersion": "1.0.0.0",
+                          "parameters": {
+                            "privateDnsZoneName": {
+                              "type": "string"
+                            },
+                            "virtualNetworkResourceId": {
+                              "type": "string"
+                            }
+                          },
+                          "resources": [
+                            {
+                              "type": "Microsoft.Network/privateDnsZones/virtualNetworkLinks",
+                              "apiVersion": "2020-06-01",
+                              "name": "[[concat(parameters('privateDnsZoneName'),'/',last(split(parameters('virtualNetworkResourceId'),'/')))]",
+                              "location": "global",
+                              "properties": {
+                                "registrationEnabled": false,
+                                "virtualNetwork": {
+                                  "id": "[[parameters('virtualNetworkResourceId')]"
+                                }
                               }
                             }
-                          }
-                        ]
+                          ]
+                        }
                       }
-                    }
+                    },
+                    "roleDefinitionIds": [
+                      "/providers/microsoft.authorization/roleDefinitions/b12aa53e-6015-4669-85d0-8515ebb3ae7f"
+                    ],
+                    "type": "Microsoft.Network/privateDnsZones/virtualNetworkLinks"
                   },
-                  "roleDefinitionIds": [
-                    "/providers/microsoft.authorization/roleDefinitions/b12aa53e-6015-4669-85d0-8515ebb3ae7f"
-                  ],
-                  "type": "Microsoft.Network/privateDnsZones/virtualNetworkLinks"
-                },
-                "effect": "deployIfNotExists"
-              }
-            },
-            "$fxv#1": {
-              "virtualNetworkResourceId": {
-                "type": "String",
-                "metadata": {
-                  "strongType": "microsoft.Network/virtualNetworks",
-                  "displayName": "Vnet Resource ID",
-                  "description": "Resource ID of VNE to link. The format must be: '/subscriptions/{subscription id}/resourceGroups/{resourceGroup name}/providers/Microsoft.Network/virtualNetworks/{virtual network name}'"
-                }
-              },
-              "privateDNSzoneNames": {
-                "type": "array",
-                "metadata": {
-                  "displayName": "Private DNS Zone Names",
-                  "description": "Private DNS Zone Names to link. The format must be: '.mysql.database.azure.com'"
+                  "effect": "[[parameters('effect')]"
                 }
               }
             },
-            "PolicyRule": "[variables('$fxv#0')]",
-            "PolicyParams": "[variables('$fxv#1')]"
+            "PolicyJSON": "[variables('$fxv#0')]"
           },
           "resources": [
             {
@@ -208,8 +221,8 @@
                   "category": "[parameters('PolicyCategory')]",
                   "version": "[parameters('PolicyVersion')]"
                 },
-                "parameters": "[variables('PolicyParams')]",
-                "policyRule": "[variables('PolicyRule')]"
+                "parameters": "[variables('PolicyJSON').parameters]",
+                "policyRule": "[variables('PolicyJSON').policyRule]"
               }
             }
           ],
@@ -251,7 +264,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.17.1.54307",
-              "templateHash": "18045596888120486901"
+              "templateHash": "9132147225316558784"
             }
           },
           "parameters": {
@@ -278,52 +291,53 @@
           },
           "variables": {
             "$fxv#0": {
-              "if": {
-                "allOf": [
-                  {
-                    "equals": "Microsoft.Network/privateDnsZones",
-                    "field": "type"
+              "parameters": {
+                "effect": {
+                  "type": "String",
+                  "metadata": {
+                    "displayName": "Effect",
+                    "description": "Enable or disable the execution of the policy"
                   },
-                  {
-                    "count": {
-                      "value": "[[parameters('ExcludeDNSzones')]",
-                      "where": {
-                        "field": "name",
-                        "like": "[[current()]"
-                      }
-                    },
-                    "equals": 0
-                  }
-                ]
-              },
-              "then": {
-                "effect": "[[parameters('effect')]"
-              }
-            },
-            "$fxv#1": {
-              "effect": {
-                "type": "String",
-                "metadata": {
-                  "displayName": "Effect",
-                  "description": "Enable or disable the execution of the policy"
+                  "allowedValues": [
+                    "Audit",
+                    "Deny",
+                    "Disabled"
+                  ],
+                  "defaultValue": "Deny"
                 },
-                "allowedValues": [
-                  "Audit",
-                  "Deny",
-                  "Disabled"
-                ],
-                "defaultValue": "Deny"
+                "ExcludeDNSzones": {
+                  "type": "array",
+                  "metadata": {
+                    "displayName": "Exclude DNS Zones",
+                    "description": "Exclude DNS Zones. e.g.: '*.contoso.com'"
+                  }
+                }
               },
-              "ExcludeDNSzones": {
-                "type": "array",
-                "metadata": {
-                  "displayName": "Exclude DNS Zone which contains",
-                  "description": "Exclude DNS Zone which contains. Example: '*.contoso.com'"
+              "policyRule": {
+                "if": {
+                  "allOf": [
+                    {
+                      "equals": "Microsoft.Network/privateDnsZones",
+                      "field": "type"
+                    },
+                    {
+                      "count": {
+                        "value": "[[parameters('ExcludeDNSzones')]",
+                        "where": {
+                          "field": "name",
+                          "like": "[[current()]"
+                        }
+                      },
+                      "equals": 0
+                    }
+                  ]
+                },
+                "then": {
+                  "effect": "[[parameters('effect')]"
                 }
               }
             },
-            "PolicyRule": "[variables('$fxv#0')]",
-            "PolicyParams": "[variables('$fxv#1')]"
+            "PolicyJSON": "[variables('$fxv#0')]"
           },
           "resources": [
             {
@@ -339,8 +353,8 @@
                   "category": "[parameters('PolicyCategory')]",
                   "version": "[parameters('PolicyVersion')]"
                 },
-                "parameters": "[variables('PolicyParams')]",
-                "policyRule": "[variables('PolicyRule')]"
+                "parameters": "[variables('PolicyJSON').parameters]",
+                "policyRule": "[variables('PolicyJSON').policyRule]"
               }
             }
           ],
@@ -412,7 +426,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.17.1.54307",
-              "templateHash": "18066202952590573617"
+              "templateHash": "14752733475857707611"
             }
           },
           "parameters": {
@@ -442,6 +456,14 @@
             },
             "roleDefinitionId": {
               "type": "string"
+            },
+            "PolicyEffect": {
+              "type": "string",
+              "defaultValue": "deployIfNotExists",
+              "allowedValues": [
+                "disabled",
+                "deployIfNotExists"
+              ]
             }
           },
           "resources": [
@@ -457,6 +479,9 @@
                 "displayName": "[parameters('PolicyDisplayName')]",
                 "description": "[parameters('PolicyDescription')]",
                 "parameters": {
+                  "effect": {
+                    "value": "[parameters('PolicyEffect')]"
+                  },
                   "virtualNetworkResourceId": {
                     "value": "[parameters('virtualNetworkResourceID')]"
                   },

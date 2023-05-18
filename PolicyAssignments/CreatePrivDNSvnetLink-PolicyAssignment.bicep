@@ -9,6 +9,12 @@ param privateDNSzoneNames array
 param createPolicyAssignment bool
 param roleDefinitionId string
 
+@allowed([
+  'disabled'
+  'deployIfNotExists'
+])
+param PolicyEffect string = 'deployIfNotExists'
+
 resource PolicyAssignment 'Microsoft.Authorization/policyAssignments@2022-06-01' = {
   name: PolicyName
   location: location
@@ -19,6 +25,9 @@ resource PolicyAssignment 'Microsoft.Authorization/policyAssignments@2022-06-01'
     displayName: PolicyDisplayName
     description: PolicyDescription
     parameters: {
+      effect: {
+        value: PolicyEffect
+      }
       virtualNetworkResourceId: {
         value: virtualNetworkResourceID
       }
@@ -41,7 +50,7 @@ resource rbac1 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
 }
 
 // Deploy RBAC Assignment. Assign role to the Managed Identity used by the Policy Assignment for remediation
-module rbac2 '../RoleAssignments/rbac-assignment.bicep' = {
+module rbac2 'CreatePrivDNSvnetLink-RoleAssignment.bicep' = {
   name: 'Deploy-rbac-policyAssign-${location}'
   scope: resourceGroup(split(virtualNetworkResourceID, '/')[2], split(virtualNetworkResourceID, '/')[4])
   params: {

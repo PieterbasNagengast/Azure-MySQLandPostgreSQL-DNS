@@ -6,8 +6,7 @@ param PolicyDescription string = 'Deploy VNET Links to Private DNS Zones. e.g. f
 param PolicyCategory string = 'Private DNS Zones'
 param PolicyVersion string = '1.0.0'
 
-var PolicyRule = loadJsonContent('CreatePrivDNSvnetLink-PolicyRule.json')
-var PolicyParams = loadJsonContent('CreatePrivDNSvnetLink-PolicyParams.json')
+var PolicyJSON = loadJsonContent('CreatePrivDNSvnetLink-Policy.json')
 
 resource CreatePrivDNSvnetLink 'Microsoft.Authorization/policyDefinitions@2021-06-01' = {
   name: PolicyName
@@ -20,8 +19,8 @@ resource CreatePrivDNSvnetLink 'Microsoft.Authorization/policyDefinitions@2021-0
       category: PolicyCategory
       version: PolicyVersion
     }
-    parameters: PolicyParams
-    policyRule: PolicyRule
+    parameters: PolicyJSON.parameters
+    policyRule: PolicyJSON.policyRule
   }
 }
 
